@@ -89,8 +89,8 @@ function store_client_key(ck) {
 /*---------------------------------------------------------------------------*/
 client.on('connectFailed', function(error) {
     // failed to connect, set timer to retry in a few seconds
-    console.log('Connect Error: ' + error.toString());
-    throw error;
+  console.log('Connect Error: ' + error.toString());
+  setTimeout(function(){connect();}, 5000);
 });
 /*---------------------------------------------------------------------------*/
 // store the connection in a variable with larger scope so that we may later
@@ -291,6 +291,7 @@ var send_command = function(prefix, msgtype, uri, payload, fn) {
     }
   }
 };
+
 //------------------------------------------
 var open_connection = function(host, fn){
     // console.log("connecting");
