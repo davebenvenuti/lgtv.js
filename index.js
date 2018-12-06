@@ -90,7 +90,7 @@ function store_client_key(ck) {
 client.on('connectFailed', function(error) {
     // failed to connect, set timer to retry in a few seconds
     console.log('Connect Error: ' + error.toString());
-    setTimeout(function(){connect();}, 5000);
+    throw error;
 });
 /*---------------------------------------------------------------------------*/
 // store the connection in a variable with larger scope so that we may later
