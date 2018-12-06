@@ -1,19 +1,19 @@
-// 
+//
 // LG webos smart TV control app
 // references:
 //    https://github.com/ConnectSDK/Connect-SDK-Android-Core
 //    https://github.com/CODeRUS/harbour-lgremote-webos
-// 
+//
 // 1: send handshake per below -> receive client key if not already
 // 2: the protocol is using JSON strings with requests from the client, responses
-//    from the TV. Subscriptions probably means the TV will push notifications 
+//    from the TV. Subscriptions probably means the TV will push notifications
 //    without prior individual requests.
 // 3: client request has these fields:
 //        type : register/request/subscribe
 //        id   : command + _ + message count (the response will mirror this number)
 //        uri  : command endpoint URI
 //        payload  : optional, eg input source string when changing input
-// 
+//
 // All callbacks follow the common pattern of function(error, ....) {}
 // ie first argument is false if the call went ok, or true if an error occurred.
 // Then, the second argument is most often the result if applicable, or not
@@ -22,7 +22,7 @@
 var fs = require('fs'); // for storing client key
 // var http = require('http'); // for communication with Kodi
 
-// var WebSocket = require('ws'); 
+// var WebSocket = require('ws');
 var WebSocketClient = require('websocket').client; // for communication with TV
 var client = new WebSocketClient();
 var handshaken = false;
@@ -37,7 +37,15 @@ eventemitter.setMaxListeners(0); // enable infinite number of listeners
 var wsurl = 'ws://lgsmarttv.lan:3000';
 
 // once connected, store client key (retrieved from TV) in this file
-var client_key_filename = "./client-key.txt";
+var os = require('os');
+var path = require('path');
+
+function expandPath(pathname) {
+  return path.resolve(pathname.replace(/~/g, os.homedir()));
+}
+
+var client_key_directory = expandPath("~/.lgtv");
+var client_key_filename = expandPath(path.join(client_key_directory, "/client-key.txt"));
 
 // bool for callbacks
 var RESULT_ERROR = true;
@@ -71,6 +79,11 @@ function get_handshake() {
 // store the client key on disk so that we don't have to pair next time
 function store_client_key(ck) {
   console.log("Storing client key:" + ck);
+  try {
+    fs.mkdirSync(client_key_directory);
+  } catch(err) {
+  }
+
   fs.writeFileSync(client_key_filename, ck);
 }
 /*---------------------------------------------------------------------------*/
@@ -240,7 +253,7 @@ var discover_ip = function(retry_timeout_seconds, tv_ip_found_callback)
       }
     }
   });
-  
+
   server.bind(); // listen to 0.0.0.0:random
   return server;
 };
@@ -265,7 +278,7 @@ var send_command = function(prefix, msgtype, uri, payload, fn) {
   try {
     if (typeof fn === 'function') {
       eventemitter.once(prefix + command_count, function (message) {
-        // console.log("*** emitter listener for " + prefix + command_count + " with message:" + message); 
+        // console.log("*** emitter listener for " + prefix + command_count + " with message:" + message);
         fn(RESULT_OK, message);
       });
     }
@@ -392,7 +405,7 @@ var unsubscribe = function(id, fn) {
   try {
     if (typeof fn === 'function') {
       eventemitter.once(prefix + command_count, function (message) {
-        // console.log("*** emitter listener for " + prefix + command_count + " with message:" + message); 
+        // console.log("*** emitter listener for " + prefix + command_count + " with message:" + message);
         fn(RESULT_OK, message);
       });
     }
@@ -455,12 +468,12 @@ var channellist = function(fn) {
           retlist.channels.push(ch);
         }
         fn(RESULT_OK, JSON.stringify(retlist));
-      
+
       } catch(e) {
         console.log("Error:" + e);
         fn(RESULT_ERROR, resp);
       }
-    
+
     } else {
       console.log("Error:" + err);
       fn(RESULT_ERROR, err);
@@ -526,7 +539,7 @@ var inputlist = function(fn) {
             ret[devs[i].id] = devs[i].icon;
           }
           console.log(ret);
-          
+
           fn(RESULT_OK, ret);
         } catch(error) {
           console.log("Error:" + error);
